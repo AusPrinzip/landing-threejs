@@ -364,11 +364,12 @@
 // Three.js animation script
 let container;
 let camera, scene, renderer;
-let animationSpeed = 2;
+let animationSpeed = 1.2; // Initial animation speed, should match value in the HTML slider
 let animationPhase = 'initial'; // 'initial' or 'stable'
 let baseTransitionTimeMS = 8000; // Base time in ms before transitioning to stable phase
 let lastSineTime = 0; // To ensure we transition at a consistent point in the sine wave
 let startTime;
+let currentTheme = 'blueGreen';
 
 init();
 
@@ -395,16 +396,72 @@ function init() {
     positions.push(-0.025, 0.025, 0);
     positions.push(0, 0, 0.025);
 
+    // Color themes
+    const colorThemes = {
+        blueGreen: (i) => {
+            // Original blue/teal for liquid theme
+            const r = Math.random() * 0.2;
+            const g = 0.4 + Math.random() * 0.4;
+            const b = 0.7 + Math.random() * 0.3;
+            return [r, g, b, 0.8 + Math.random() * 0.2];
+        },
+        purplePink: (i) => {
+            // Purple and pink theme
+            const r = 0.5 + Math.random() * 0.3;
+            const g = 0.1 + Math.random() * 0.2;
+            const b = 0.8 + Math.random() * 0.2;
+            return [r, g, b, 0.8 + Math.random() * 0.2];
+        },
+        fiery: (i) => {
+            // Red, orange, yellow theme
+            const r = 0.8 + Math.random() * 0.2;
+            const g = 0.2 + Math.random() * 0.6;
+            const b = Math.random() * 0.2;
+            return [r, g, b, 0.8 + Math.random() * 0.2];
+        },
+        rainbow: (i) => {
+            // Rainbow distribution across particles
+            // Use particle index to distribute colors across the spectrum
+            const hue = (i / instances) * 360;
+            const [r, g, b] = hslToRgb(hue / 360, 0.7 + Math.random() * 0.3, 0.5 + Math.random() * 0.2);
+            return [r, g, b, 0.8 + Math.random() * 0.2];
+        }
+    };
+
+    // Helper function to convert HSL to RGB
+    function hslToRgb(h, s, l) {
+        let r, g, b;
+
+        if (s === 0) {
+            r = g = b = l; // achromatic
+        } else {
+            const hue2rgb = (p, q, t) => {
+                if (t < 0) t += 1;
+                if (t > 1) t -= 1;
+                if (t < 1/6) return p + (q - p) * 6 * t;
+                if (t < 1/2) return q;
+                if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+                return p;
+            };
+
+            const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+            const p = 2 * l - q;
+            r = hue2rgb(p, q, h + 1/3);
+            g = hue2rgb(p, q, h);
+            b = hue2rgb(p, q, h - 1/3);
+        }
+
+        return [r, g, b];
+    }
+
     // instanced attributes
     for (let i = 0; i < instances; i++) {
         // offsets
         offsets.push(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5);
 
-        // colors - using blue/teal for liquid theme
-        const r = Math.random() * 0.2;
-        const g = 0.4 + Math.random() * 0.4;
-        const b = 0.7 + Math.random() * 0.3;
-        colors.push(r, g, b, 0.8 + Math.random() * 0.2);
+        // colors - get from current theme
+        const [r, g, b, a] = colorThemes[currentTheme](i);
+        colors.push(r, g, b, a);
 
         // orientation start
         vector.set(Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1);
@@ -480,8 +537,11 @@ function init() {
             float stablePulse = sin(vPosition.y * 8.0 + time * 0.7) * 0.1;
             
             // Blend between the two effects for smooth transition
-            color.r += basePulse;
-            color.g += stablePulse * phase;
+            // Apply to all RGB channels for more consistent effects across themes
+            float pulseEffect = basePulse + (stablePulse * phase);
+            color.r += pulseEffect;
+            color.g += pulseEffect;
+            color.b += pulseEffect;
             
             gl_FragColor = color;
         }
@@ -512,8 +572,55 @@ function init() {
     container.appendChild(renderer.domElement);
 
     window.addEventListener('resize', onWindowResize);
+
+    // Add simple color theme selector to existing control panel
+    const controlPanel = document.getElementById('control-panel');
+    if (controlPanel) {
+        // Add color theme dropdown
+        const themeDiv = document.createElement('div');
+        themeDiv.style.marginTop = '10px';
+        themeDiv.innerHTML = '<div id="theme-label" style="margin-bottom: 5px;">Color Theme:</div>';
+        controlPanel.appendChild(themeDiv);
+        
+        const themeSelect = document.createElement('select');
+        themeSelect.id = 'theme-select';
+        themeSelect.style.width = '200px';
+        themeSelect.style.padding = '3px';
+        themeSelect.style.background = 'rgba(255,255,255,0.1)';
+        themeSelect.style.color = 'white';
+        themeSelect.style.border = '1px solid rgba(255,255,255,0.3)';
+        themeSelect.innerHTML = `
+            <option value="blueGreen">Blue-Green (Default)</option>
+            <option value="purplePink">Purple-Pink</option>
+            <option value="fiery">Fiery</option>
+            <option value="rainbow">Rainbow</option>
+        `;
+        themeDiv.appendChild(themeSelect);
+        
+        // Function to apply a new color theme
+        function applyColorTheme(themeName) {
+            currentTheme = themeName;
+            
+            // Reset the colors array
+            const colorsArray = [];
+            
+            // Fill with new theme colors
+            for (let i = 0; i < geometry.instanceCount; i++) {
+                const [r, g, b, a] = colorThemes[themeName](i);
+                colorsArray.push(r, g, b, a);
+            }
+            
+            // Update the buffer
+            geometry.setAttribute('color', new THREE.InstancedBufferAttribute(new Float32Array(colorsArray), 4));
+        }
+        
+        // Add event listener for theme changes
+        themeSelect.addEventListener('change', function() {
+            applyColorTheme(this.value);
+        });
+    }
     
-    // Setup control panel functionality
+    // Setup control panel functionality 
     const countSlider = document.getElementById('count-slider');
     const countLabel = document.getElementById('count-label');
     const speedSlider = document.getElementById('speed-slider');
@@ -524,6 +631,11 @@ function init() {
             const count = parseInt(this.value);
             geometry.instanceCount = count;
             countLabel.textContent = 'Particles: ' + count;
+            
+            // When changing particle count, we need to update the colors if not using default theme
+            if (currentTheme !== 'blueGreen') {
+                applyColorTheme(currentTheme);
+            }
         });
     }
     
