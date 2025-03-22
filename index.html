@@ -110,6 +110,7 @@
 	<script>
 		let container, stats;
 		let camera, scene, renderer;
+		let animationSpeed = 1.6; // Speed multiplier (1.0 = original speed, 1.6 = 60% faster)
 
 		init();
 
@@ -183,24 +184,25 @@
 			renderer.setSize(window.innerWidth, window.innerHeight);
 			container.appendChild(renderer.domElement);
 
-			// Create a simple control for instance count
-			const countControl = document.createElement('div');
-			countControl.style.position = 'absolute';
-			countControl.style.bottom = '10px';
-			countControl.style.left = '10px';
-			countControl.style.zIndex = '100';
-			countControl.style.backgroundColor = 'rgba(0,0,0,0.5)';
-			countControl.style.padding = '10px';
-			countControl.style.borderRadius = '5px';
-			countControl.style.pointerEvents = 'auto';
+			// Create a control panel for instance count and animation speed
+			const controlPanel = document.createElement('div');
+			controlPanel.style.position = 'absolute';
+			controlPanel.style.bottom = '10px';
+			controlPanel.style.left = '10px';
+			controlPanel.style.zIndex = '100';
+			controlPanel.style.backgroundColor = 'rgba(0,0,0,0.5)';
+			controlPanel.style.padding = '10px';
+			controlPanel.style.borderRadius = '5px';
+			controlPanel.style.pointerEvents = 'auto';
 			
-			const slider = document.createElement('input');
-			slider.type = 'range';
-			slider.min = '0';
-			slider.max = instances.toString();
-			slider.value = instances.toString();
-			slider.style.width = '200px';
-			slider.addEventListener('input', function() {
+			// Instance count slider
+			const countSlider = document.createElement('input');
+			countSlider.type = 'range';
+			countSlider.min = '0';
+			countSlider.max = instances.toString();
+			countSlider.value = instances.toString();
+			countSlider.style.width = '200px';
+			countSlider.addEventListener('input', function() {
 				geometry.instanceCount = parseInt(this.value);
 				countLabel.textContent = 'Instances: ' + this.value;
 			});
@@ -209,9 +211,30 @@
 			countLabel.textContent = 'Instances: ' + instances;
 			countLabel.style.marginBottom = '5px';
 			
-			countControl.appendChild(countLabel);
-			countControl.appendChild(slider);
-			container.appendChild(countControl);
+			// Animation speed slider
+			const speedSlider = document.createElement('input');
+			speedSlider.type = 'range';
+			speedSlider.min = '0.2';
+			speedSlider.max = '3.0';
+			speedSlider.step = '0.1';
+			speedSlider.value = animationSpeed.toString();
+			speedSlider.style.width = '200px';
+			speedSlider.addEventListener('input', function() {
+				animationSpeed = parseFloat(this.value);
+				speedLabel.textContent = 'Speed: ' + animationSpeed.toFixed(1) + 'x';
+			});
+			
+			const speedLabel = document.createElement('div');
+			speedLabel.textContent = 'Speed: ' + animationSpeed.toFixed(1) + 'x';
+			speedLabel.style.marginBottom = '5px';
+			speedLabel.style.marginTop = '10px';
+			
+			// Add all controls to the panel
+			controlPanel.appendChild(countLabel);
+			controlPanel.appendChild(countSlider);
+			controlPanel.appendChild(speedLabel);
+			controlPanel.appendChild(speedSlider);
+			container.appendChild(controlPanel);
 
 			// Stats panel - simple custom implementation
 			const statsPanel = document.createElement('div');
@@ -266,9 +289,10 @@
 			const time = performance.now();
 			const object = scene.children[0];
 
-			object.rotation.y = time * 0.0005;
-			object.material.uniforms['time'].value = time * 0.005;
-			object.material.uniforms['sineTime'].value = Math.sin(object.material.uniforms['time'].value * 0.05);
+			// Base speeds multiplied by the animation speed parameter
+			object.rotation.y = time * (0.0005 * animationSpeed); 
+			object.material.uniforms['time'].value = time * (0.005 * animationSpeed);
+			object.material.uniforms['sineTime'].value = Math.sin(object.material.uniforms['time'].value * (0.05 * animationSpeed));
 
 			renderer.render(scene, camera);
 		}
