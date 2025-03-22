@@ -87,7 +87,7 @@
             flex-direction: column;
             justify-content: center;
             opacity: 0; /* Start hidden */
-            transition: opacity 1.5s ease;
+            transition: opacity 1s ease;
         }
 
         h1 {
@@ -230,15 +230,15 @@
             pointer-events: auto;
         }
         
-        #count-label, #speed-label {
+        #count-label, #speed-label, #animation-progress-label {
             margin-bottom: 5px;
         }
         
-        #speed-label {
+        #speed-label, #animation-progress-label {
             margin-top: 10px;
         }
         
-        #count-slider, #speed-slider {
+        #count-slider, #speed-slider, #animation-progress-slider {
             width: 200px;
         }
         
@@ -355,6 +355,9 @@
         
         <div id="speed-label">Speed: 1.2x</div>
         <input type="range" id="speed-slider" min="0.2" max="3.0" step="0.1" value="1.2" />
+        
+        <div id="animation-progress-label">Animation Progress: 0%</div>
+        <input type="range" id="animation-progress-slider" min="0" max="100" step="1" value="0" />
     </div>
     
     <!-- Stats Panel -->
@@ -365,17 +368,16 @@
 let container;
 let camera, scene, renderer;
 let animationSpeed = 1.2; // Initial animation speed, should match value in the HTML slider
-let animationPhase = 'initial'; // 'initial' or 'stable'
-let baseTransitionTimeMS = 8000; // Base time in ms before transitioning to stable phase
-let lastSineTime = 0; // To ensure we transition at a consistent point in the sine wave
-let startTime;
+let animationProgress = 0; // Progress from 0 (chaotic) to 1 (sphere)
 let currentTheme = 'blueGreen';
+let mesh;
+let autoAnimating = true; // Controls whether animation automatically progresses
+let autoAnimationStart = performance.now(); // Starting time for auto animation
 
 init();
 
 function init() {
     container = document.getElementById('animation-container');
-    startTime = performance.now();
 
     camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 10);
     camera.position.z = 2;
@@ -486,8 +488,8 @@ function init() {
     // material
     const vertexShader = `
         precision highp float;
-        uniform float sineTime;
-        uniform float phase;
+        uniform float time;
+        uniform float progress;
         uniform mat4 modelViewMatrix;
         uniform mat4 projectionMatrix;
         attribute vec3 position;
@@ -499,20 +501,17 @@ function init() {
         varying vec4 vColor;
 
         void main() {
-            // Blend between initial phase and stable phase based on the phase uniform
-            // This ensures a smooth transition between the two states
+            // Chaotic state - expanded particles with more randomness
+            float chaoticScale = 1.0 + sin(offset.x * 10.0 + time) * 0.5;
             
-            // Initial phase - expanding and contracting behavior
-            float initialScale = max(abs(sineTime * 2.0 + 1.0), 0.5);
+            // Sphere state - particles form a stable sphere
+            float sphereScale = 0.3 + sin(time * 3.0) * 0.05;
             
-            // Stable phase - particles stay in a tighter sphere with gentle pulsing
-            float stableScale = 0.3 + (sin(sineTime * 3.0) * 0.1 + 0.1);
-            
-            // Smooth linear interpolation between the two scales based on phase
-            float scaleFactor = mix(initialScale, stableScale, phase);
+            // Interpolate between chaotic and sphere states based on progress
+            float scaleFactor = mix(chaoticScale, sphereScale, progress);
             
             vPosition = offset * scaleFactor + position;
-            vec4 orientation = normalize(mix(orientationStart, orientationEnd, sineTime));
+            vec4 orientation = normalize(mix(orientationStart, orientationEnd, sin(time * 0.5) * 0.5 + 0.5));
             vec3 vcV = cross(orientation.xyz, vPosition);
             vPosition = vcV * (2.0 * orientation.w) + (cross(orientation.xyz, vcV) * 2.0 + vPosition);
             vColor = color;
@@ -523,25 +522,22 @@ function init() {
     const fragmentShader = `
         precision highp float;
         uniform float time;
-        uniform float phase;
+        uniform float progress;
         varying vec3 vPosition;
         varying vec4 vColor;
 
         void main() {
             vec4 color = vec4(vColor);
             
-            // Base color pulsing effect
-            float basePulse = sin(vPosition.x * 10.0 + time) * 0.2;
+            // Chaotic phase - more color variance
+            float chaoticPulse = sin(vPosition.x * 10.0 + time) * 0.3;
             
-            // Additional color pulsing for stable phase
-            float stablePulse = sin(vPosition.y * 8.0 + time * 0.7) * 0.1;
+            // Sphere phase - subtle pulsing
+            float spherePulse = sin(vPosition.y * 8.0 + time * 0.7) * 0.1;
             
-            // Blend between the two effects for smooth transition
-            // Apply to all RGB channels for more consistent effects across themes
-            float pulseEffect = basePulse + (stablePulse * phase);
-            color.r += pulseEffect;
-            color.g += pulseEffect;
-            color.b += pulseEffect;
+            // Blend between effects based on progress
+            float pulseEffect = mix(chaoticPulse, spherePulse, progress);
+            color.rgb += pulseEffect;
             
             gl_FragColor = color;
         }
@@ -549,9 +545,8 @@ function init() {
 
     const material = new THREE.RawShaderMaterial({
         uniforms: {
-            'time': { value: 1.0 },
-            'sineTime': { value: 1.0 },
-            'phase': { value: 0.0 } // 0.0 = initial phase, 1.0 = stable phase
+            'time': { value: 0.0 },
+            'progress': { value: animationProgress }
         },
         vertexShader: vertexShader,
         fragmentShader: fragmentShader,
@@ -559,7 +554,7 @@ function init() {
         transparent: true
     });
 
-    const mesh = new THREE.Mesh(geometry, material);
+    mesh = new THREE.Mesh(geometry, material);
     scene.add(mesh);
 
     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -573,7 +568,7 @@ function init() {
 
     window.addEventListener('resize', onWindowResize);
 
-    // Add simple color theme selector to existing control panel
+    // Add color theme selector to existing control panel
     const controlPanel = document.getElementById('control-panel');
     if (controlPanel) {
         // Add color theme dropdown
@@ -625,6 +620,8 @@ function init() {
     const countLabel = document.getElementById('count-label');
     const speedSlider = document.getElementById('speed-slider');
     const speedLabel = document.getElementById('speed-label');
+    const progressSlider = document.getElementById('animation-progress-slider');
+    const progressLabel = document.getElementById('animation-progress-label');
     
     if (countSlider && countLabel) {
         countSlider.addEventListener('input', function() {
@@ -645,20 +642,88 @@ function init() {
         speedLabel.textContent = 'Speed: ' + animationSpeed.toFixed(1) + 'x';
         
         speedSlider.addEventListener('input', function() {
-            // Update the animation speed without resetting the animation phase
             animationSpeed = parseFloat(this.value);
             speedLabel.textContent = 'Speed: ' + animationSpeed.toFixed(1) + 'x';
+        });
+    }
+    
+    // Also update hero visibility when using manual progress slider
+    if (progressSlider && progressLabel) {
+        progressSlider.addEventListener('input', function() {
+            animationProgress = parseInt(this.value) / 100;
+            progressLabel.textContent = 'Animation Progress: ' + this.value + '%';
+            mesh.material.uniforms['progress'].value = animationProgress;
             
-            // If still in presentation phase or just at the beginning, we need to recalculate timing
-            if (animationPhase === 'initial') {
-                // Reset start time to adjust for new speed while maintaining current animation position
-                const currentTime = performance.now();
-                const elapsedSoFar = currentTime - startTime;
-                // Adjust start time based on new speed ratio
-                startTime = currentTime - (elapsedSoFar * (1.2 / animationSpeed));
+            // Update hero content visibility based on slider position
+            const heroContent = document.getElementById('hero-content');
+            if (heroContent) {
+                if (animationProgress >= 1.0) {
+                    heroContent.style.opacity = '1';
+                } else {
+                    heroContent.style.opacity = '0';
+                }
             }
         });
     }
+    
+    // Reset auto-animation starting time
+    autoAnimationStart = performance.now();
+    const autoAnimationDuration = 5000; // 5 seconds to complete the animation
+    
+    // Add auto-animation toggle button
+    const autoAnimateDiv = document.createElement('div');
+    autoAnimateDiv.style.marginTop = '10px';
+    
+    const autoAnimateBtn = document.createElement('button');
+    autoAnimateBtn.textContent = 'Pause Animation';
+    autoAnimateBtn.style.width = '200px';
+    autoAnimateBtn.style.padding = '5px';
+    autoAnimateBtn.style.background = 'rgba(255,255,255,0.1)';
+    autoAnimateBtn.style.color = 'white';
+    autoAnimateBtn.style.border = '1px solid rgba(255,255,255,0.3)';
+    autoAnimateBtn.style.borderRadius = '3px';
+    autoAnimateBtn.style.cursor = 'pointer';
+    
+    autoAnimateBtn.addEventListener('click', function() {
+        autoAnimating = !autoAnimating;
+        this.textContent = autoAnimating ? 'Pause Animation' : 'Resume Animation';
+        
+        if (autoAnimating) {
+            // Reset the animation start time but maintain current progress
+            autoAnimationStart = performance.now() - (animationProgress * autoAnimationDuration);
+        }
+    });
+    
+    autoAnimateDiv.appendChild(autoAnimateBtn);
+    controlPanel.appendChild(autoAnimateDiv);
+    
+    // Add reset button
+    const resetBtn = document.createElement('button');
+    resetBtn.textContent = 'Reset Animation';
+    resetBtn.style.width = '200px';
+    resetBtn.style.padding = '5px';
+    resetBtn.style.marginTop = '5px';
+    resetBtn.style.background = 'rgba(255,255,255,0.1)';
+    resetBtn.style.color = 'white';
+    resetBtn.style.border = '1px solid rgba(255,255,255,0.3)';
+    resetBtn.style.borderRadius = '3px';
+    resetBtn.style.cursor = 'pointer';
+    
+    resetBtn.addEventListener('click', function() {
+        animationProgress = 0;
+        progressSlider.value = 0;
+        progressLabel.textContent = 'Animation Progress: 0%';
+        mesh.material.uniforms['progress'].value = 0;
+        autoAnimationStart = performance.now();
+        
+        // Hide hero content when animation resets
+        const heroContent = document.getElementById('hero-content');
+        if (heroContent) {
+            heroContent.style.opacity = '0';
+        }
+    });
+    
+    autoAnimateDiv.appendChild(resetBtn);
     
     // Setup stats panel
     const statsPanel = document.getElementById('stats-panel');
@@ -687,16 +752,6 @@ function init() {
     
     // Start animation
     animate();
-
-    // Simple fade in for hero content with delay
-    // Calculate a fade-in time that respects the animation speed
-    const fadeInTime = baseTransitionTimeMS / animationSpeed + 1500; // Add 1.5s after transition
-    setTimeout(() => {
-        const heroContent = document.getElementById('hero-content');
-        if (heroContent) {
-            heroContent.style.opacity = '1';
-        }
-    }, fadeInTime);
 }
 
 function onWindowResize() {
@@ -709,57 +764,43 @@ function animate() {
     requestAnimationFrame(animate);
     
     const currentTime = performance.now();
-    const elapsedTime = currentTime - startTime;
-    const object = scene.children[0];
     
-    // Calculate speed-adjusted transition time
-    const adjustedTransitionTime = baseTransitionTimeMS / animationSpeed;
-    
-    // Calculate phase value for smooth transition, now adjusted by speed
-    const transitionDuration = 3000 / animationSpeed; // 3 seconds transition also affected by speed
-    const transitionProgress = Math.max(0, Math.min(1.0, (elapsedTime - adjustedTransitionTime) / transitionDuration));
-    
-    // Update animation phase tracking
-    if (transitionProgress > 0 && animationPhase === 'initial') {
-        animationPhase = 'stable';
-    }
-    
-    object.material.uniforms['phase'].value = transitionProgress;
-    
-    // Base animation speed is controlled by the slider
-    let currentSpeed = animationSpeed;
-    
-    // In stable phase, we adjust the speed but preserve the user's slider setting
-    if (transitionProgress > 0) {
-        // Apply a modifier to the user-selected speed during the stable phase
-        // Scale is 1.0 → 0.6 of the user-selected speed
-        const stableSpeedModifier = 1.0 - (transitionProgress * 0.4);
-        currentSpeed = animationSpeed * stableSpeedModifier;
-    }
-
-    // Continue rotation and time-based animation
-    object.rotation.y = currentTime * (0.0002 * currentSpeed); 
-    
-    // Calculate time and sine values
-    const timeValue = currentTime * (0.005 * currentSpeed);
-    object.material.uniforms['time'].value = timeValue;
-    
-    // Calculate new sine time
-    const newSineTime = Math.sin(timeValue * (0.05 * currentSpeed));
-    
-    // Special handling for transition start to avoid cuts in animation
-    if (elapsedTime >= adjustedTransitionTime && elapsedTime < adjustedTransitionTime + 100 && transitionProgress < 0.1) {
-        // If we're just starting transition, make sure we're at a good point in the cycle
-        // Wait until we're at a reasonable middle value to start transition
-        if (Math.abs(newSineTime) < 0.3) {
-            // Delay transition slightly until we reach a better point in the cycle
-            object.material.uniforms['phase'].value = 0;
+    // Update auto animation progress if enabled
+    if (autoAnimating) {
+        const animationDuration = 5000 / animationSpeed; // Adjust duration based on speed
+        const elapsedTime = currentTime - autoAnimationStart;
+        
+        // Calculate new progress
+        animationProgress = Math.min(1.0, elapsedTime / animationDuration);
+        
+        // Update the slider UI
+        const progressSlider = document.getElementById('animation-progress-slider');
+        const progressLabel = document.getElementById('animation-progress-label');
+        if (progressSlider && progressLabel) {
+            progressSlider.value = Math.round(animationProgress * 100);
+            progressLabel.textContent = 'Animation Progress: ' + Math.round(animationProgress * 100) + '%';
+        }
+        
+        // Update the shader uniform
+        mesh.material.uniforms['progress'].value = animationProgress;
+        
+        // Show hero text when animation is complete
+        const heroContent = document.getElementById('hero-content');
+        if (heroContent) {
+            if (animationProgress >= 1.0) {
+                heroContent.style.opacity = '1';
+            } else {
+                heroContent.style.opacity = '0';
+            }
         }
     }
     
-    object.material.uniforms['sineTime'].value = newSineTime;
-    lastSineTime = newSineTime;
-
+    // Update animation time uniform with speed factor
+    mesh.material.uniforms['time'].value = currentTime * 0.001 * animationSpeed;
+    
+    // Rotate the particles
+    mesh.rotation.y = currentTime * 0.0002 * animationSpeed;
+    
     renderer.render(scene, camera);
 }
 
