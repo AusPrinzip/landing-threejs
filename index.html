@@ -1,301 +1,660 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<title>three.js webgl - instancing test (single triangle)</title>
-	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-	<style>
-		body {
-			margin: 0;
-			background-color: #000;
-			color: #fff;
-			font-family: Monospace;
-			font-size: 13px;
-			line-height: 24px;
-			overscroll-behavior: none;
-		}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liquidao - Unlock Liquidity for Time-Locked DeFi Assets</title>
+    <style>
+        /* Modern Font Imports */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
-		a {
-			color: #ff0;
-			text-decoration: none;
-		}
+        /* CSS Reset and Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-		a:hover {
-			text-decoration: underline;
-		}
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #000000;
+            color: #ffffff;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
 
-		#container {
-			position: absolute;
-			top: 0;
-			left: 0;
-			width: 100%;
-			height: 100%;
-		}
+        /* Animation Container */
+        #animation-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            z-index: 1;
+        }
 
-		#info {
-			position: absolute;
-			top: 0px;
-			width: 100%;
-			padding: 10px;
-			box-sizing: border-box;
-			text-align: center;
-			-moz-user-select: none;
-			-webkit-user-select: none;
-			-ms-user-select: none;
-			user-select: none;
-			pointer-events: none;
-			z-index: 1;
-		}
-	</style>
+        /* Content Overlay */
+        .content-overlay {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            height: 100vh;
+            padding: 2rem;
+            display: grid;
+            grid-template-rows: auto 1fr;
+        }
+
+        /* Navigation */
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, #3a8fff, #3af0ff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .nav-links a {
+            color: #a4b1cd;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: #ffffff;
+        }
+
+        /* Hero Text */
+        .hero-text {
+            width: 50%;
+            max-width: 600px;
+            padding: 0 2rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            opacity: 0; /* Start hidden */
+            transition: opacity 1.5s ease;
+        }
+
+        h1 {
+            font-size: 2.75rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            background: linear-gradient(90deg, #ffffff, #a4b1cd);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px rgba(255, 255, 255, 0.1);
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: #a4b1cd;
+            margin-bottom: 2.5rem;
+            font-weight: 400;
+        }
+
+        /* Benefits Section */
+        .benefits {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .benefit {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .benefit-icon {
+            width: 3rem;
+            height: 3rem;
+            background: rgba(58, 143, 255, 0.15);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            backdrop-filter: blur(5px);
+        }
+
+        .benefit-text h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+            color: #ffffff;
+        }
+
+        .benefit-text p {
+            font-size: 0.875rem;
+            color: #a4b1cd;
+        }
+
+        /* CTA Buttons */
+        .cta-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .primary-button, .secondary-button {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.25rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .primary-button {
+            background: linear-gradient(90deg, #3a8fff, #3af0ff);
+            color: #0a0e17;
+            border: none;
+        }
+
+        .primary-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(58, 143, 255, 0.3);
+        }
+
+        .secondary-button {
+            background: rgba(255, 255, 255, 0.05);
+            color: #ffffff;
+            border: 1px solid rgba(164, 177, 205, 0.3);
+            backdrop-filter: blur(5px);
+        }
+
+        .secondary-button:hover {
+            background: rgba(164, 177, 205, 0.1);
+        }
+
+        /* Compatible Ecosystems */
+        .compatible-with {
+            margin-top: 2rem;
+        }
+
+        .compatible-with p {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #a4b1cd;
+            margin-bottom: 0.75rem;
+        }
+
+        .ecosystem-logos {
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+        }
+
+        .ecosystem-logos span {
+            color: #ffffff;
+            font-weight: 500;
+            opacity: 0.7;
+            transition: opacity 0.3s ease;
+        }
+
+        .ecosystem-logos span:hover {
+            opacity: 1;
+        }
+
+        /* Control Panel */
+        #control-panel {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            z-index: 100;
+            background-color: rgba(0,0,0,0.5);
+            padding: 10px;
+            border-radius: 5px;
+            color: #fff;
+            font-family: 'Inter', monospace;
+            font-size: 12px;
+            pointer-events: auto;
+        }
+        
+        #count-label, #speed-label {
+            margin-bottom: 5px;
+        }
+        
+        #speed-label {
+            margin-top: 10px;
+        }
+        
+        #count-slider, #speed-slider {
+            width: 200px;
+        }
+        
+        /* Stats Panel */
+        #stats-panel {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 100;
+            background-color: rgba(0,0,0,0.5);
+            padding: 5px 10px;
+            border-radius: 3px;
+            color: #0ff;
+            font-family: monospace;
+            font-size: 12px;
+            pointer-events: none;
+        }
+
+        @media (max-width: 600px) {
+            .content-overlay {
+                padding: 1rem;
+            }
+            
+            h1 {
+                font-size: 1.75rem;
+            }
+            
+            .subtitle {
+                font-size: 1rem;
+            }
+            
+            .nav-links {
+                gap: 1rem;
+            }
+            
+            .nav-links a {
+                font-size: 0.8rem;
+            }
+            
+            .cta-buttons {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r124/three.min.js"></script>
 </head>
 <body>
+    <!-- Animation Container (full screen) -->
+    <div id="animation-container"></div>
+    
+    <!-- Content Overlay -->
+    <div class="content-overlay">
+        <nav>
+            <div class="logo">Liquidao</div>
+            <div class="nav-links">
+                <a href="#protocol">Protocol</a>
+                <a href="#ecosystems">Ecosystems</a>
+                <a href="#governance">Governance</a>
+            </div>
+        </nav>
+        
+        <div class="hero-text" id="hero-content">
+            <h1>Unlocking Liquidity for Time-Locked DeFi Assets</h1>
+            <p class="subtitle">Create instant liquidity for your vested tokens while maintaining governance rewards</p>
+            
+            <div class="benefits">
+                <div class="benefit">
+                    <div class="benefit-icon">🔓</div>
+                    <div class="benefit-text">
+                        <h3>Immediate Liquidity</h3>
+                        <p>For otherwise locked assets</p>
+                    </div>
+                </div>
+                
+                <div class="benefit">
+                    <div class="benefit-icon">🔄</div>
+                    <div class="benefit-text">
+                        <h3>Flexible Exposure</h3>
+                        <p>Maintain position while having liquidity</p>
+                    </div>
+                </div>
+                
+                <div class="benefit">
+                    <div class="benefit-icon">💰</div>
+                    <div class="benefit-text">
+                        <h3>Staking Rewards</h3>
+                        <p>From vNFT voting power</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="cta-buttons">
+                <button class="primary-button">Launch App</button>
+                <button class="secondary-button">Documentation</button>
+            </div>
+            
+            <div class="compatible-with">
+                <p>Compatible with</p>
+                <div class="ecosystem-logos">
+                    <span>Thena</span>
+                    <span>Aerodrome</span>
+                    <span>Curve</span>
+                    <span>Pendle</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Control Panel -->
+    <div id="control-panel">
+        <div id="count-label">Particles: 30000</div>
+        <input type="range" id="count-slider" min="1000" max="50000" value="30000" />
+        
+        <div id="speed-label">Speed: 1.2x</div>
+        <input type="range" id="speed-slider" min="0.2" max="3.0" step="0.1" value="1.2" />
+    </div>
+    
+    <!-- Stats Panel -->
+    <div id="stats-panel">60 FPS</div>
 
-	<div id="container"></div>
-	<div id="info">
-		<a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> - instancing demo (single triangle)
-		<div id="notSupported" style="display:none">Sorry your graphics card + browser does not support hardware instancing</div>
-	</div>
+    <script>
+// Three.js animation script
+let container;
+let camera, scene, renderer;
+let animationSpeed = 2;
+let animationPhase = 'initial'; // 'initial' or 'stable'
+let baseTransitionTimeMS = 8000; // Base time in ms before transitioning to stable phase
+let lastSineTime = 0; // To ensure we transition at a consistent point in the sine wave
+let startTime;
 
-	<script id="vertexShader" type="x-shader/x-vertex">
-		precision highp float;
+init();
 
-		uniform float sineTime;
+function init() {
+    container = document.getElementById('animation-container');
+    startTime = performance.now();
 
-		uniform mat4 modelViewMatrix;
-		uniform mat4 projectionMatrix;
+    camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 10);
+    camera.position.z = 2;
 
-		attribute vec3 position;
-		attribute vec3 offset;
-		attribute vec4 color;
-		attribute vec4 orientationStart;
-		attribute vec4 orientationEnd;
+    scene = new THREE.Scene();
 
-		varying vec3 vPosition;
-		varying vec4 vColor;
+    // geometry
+    const vector = new THREE.Vector4();
+    const instances = 30000;
 
-		void main(){
+    const positions = [];
+    const offsets = [];
+    const colors = [];
+    const orientationsStart = [];
+    const orientationsEnd = [];
 
-			vPosition = offset * max( abs( sineTime * 2.0 + 1.0 ), 0.5 ) + position;
-			vec4 orientation = normalize( mix( orientationStart, orientationEnd, sineTime ) );
-			vec3 vcV = cross( orientation.xyz, vPosition );
-			vPosition = vcV * ( 2.0 * orientation.w ) + ( cross( orientation.xyz, vcV ) * 2.0 + vPosition );
+    positions.push(0.025, -0.025, 0);
+    positions.push(-0.025, 0.025, 0);
+    positions.push(0, 0, 0.025);
 
-			vColor = color;
+    // instanced attributes
+    for (let i = 0; i < instances; i++) {
+        // offsets
+        offsets.push(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5);
 
-			gl_Position = projectionMatrix * modelViewMatrix * vec4( vPosition, 1.0 );
+        // colors - using blue/teal for liquid theme
+        const r = Math.random() * 0.2;
+        const g = 0.4 + Math.random() * 0.4;
+        const b = 0.7 + Math.random() * 0.3;
+        colors.push(r, g, b, 0.8 + Math.random() * 0.2);
 
-		}
-	</script>
+        // orientation start
+        vector.set(Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1);
+        vector.normalize();
+        orientationsStart.push(vector.x, vector.y, vector.z, vector.w);
 
-	<script id="fragmentShader" type="x-shader/x-fragment">
-		precision highp float;
+        // orientation end
+        vector.set(Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1);
+        vector.normalize();
+        orientationsEnd.push(vector.x, vector.y, vector.z, vector.w);
+    }
 
-		uniform float time;
+    const geometry = new THREE.InstancedBufferGeometry();
+    geometry.instanceCount = instances;
 
-		varying vec3 vPosition;
-		varying vec4 vColor;
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geometry.setAttribute('offset', new THREE.InstancedBufferAttribute(new Float32Array(offsets), 3));
+    geometry.setAttribute('color', new THREE.InstancedBufferAttribute(new Float32Array(colors), 4));
+    geometry.setAttribute('orientationStart', new THREE.InstancedBufferAttribute(new Float32Array(orientationsStart), 4));
+    geometry.setAttribute('orientationEnd', new THREE.InstancedBufferAttribute(new Float32Array(orientationsEnd), 4));
 
-		void main() {
+    // material
+    const vertexShader = `
+        precision highp float;
+        uniform float sineTime;
+        uniform float phase;
+        uniform mat4 modelViewMatrix;
+        uniform mat4 projectionMatrix;
+        attribute vec3 position;
+        attribute vec3 offset;
+        attribute vec4 color;
+        attribute vec4 orientationStart;
+        attribute vec4 orientationEnd;
+        varying vec3 vPosition;
+        varying vec4 vColor;
 
-			vec4 color = vec4( vColor );
-			color.r += sin( vPosition.x * 10.0 + time ) * 0.5;
+        void main() {
+            // Blend between initial phase and stable phase based on the phase uniform
+            // This ensures a smooth transition between the two states
+            
+            // Initial phase - expanding and contracting behavior
+            float initialScale = max(abs(sineTime * 2.0 + 1.0), 0.5);
+            
+            // Stable phase - particles stay in a tighter sphere with gentle pulsing
+            float stableScale = 0.3 + (sin(sineTime * 3.0) * 0.1 + 0.1);
+            
+            // Smooth linear interpolation between the two scales based on phase
+            float scaleFactor = mix(initialScale, stableScale, phase);
+            
+            vPosition = offset * scaleFactor + position;
+            vec4 orientation = normalize(mix(orientationStart, orientationEnd, sineTime));
+            vec3 vcV = cross(orientation.xyz, vPosition);
+            vPosition = vcV * (2.0 * orientation.w) + (cross(orientation.xyz, vcV) * 2.0 + vPosition);
+            vColor = color;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(vPosition, 1.0);
+        }
+    `;
 
-			gl_FragColor = color;
+    const fragmentShader = `
+        precision highp float;
+        uniform float time;
+        uniform float phase;
+        varying vec3 vPosition;
+        varying vec4 vColor;
 
-		}
-	</script>
+        void main() {
+            vec4 color = vec4(vColor);
+            
+            // Base color pulsing effect
+            float basePulse = sin(vPosition.x * 10.0 + time) * 0.2;
+            
+            // Additional color pulsing for stable phase
+            float stablePulse = sin(vPosition.y * 8.0 + time * 0.7) * 0.1;
+            
+            // Blend between the two effects for smooth transition
+            color.r += basePulse;
+            color.g += stablePulse * phase;
+            
+            gl_FragColor = color;
+        }
+    `;
 
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r124/three.min.js"></script>
+    const material = new THREE.RawShaderMaterial({
+        uniforms: {
+            'time': { value: 1.0 },
+            'sineTime': { value: 1.0 },
+            'phase': { value: 0.0 } // 0.0 = initial phase, 1.0 = stable phase
+        },
+        vertexShader: vertexShader,
+        fragmentShader: fragmentShader,
+        side: THREE.DoubleSide,
+        transparent: true
+    });
 
-	<script>
-		let container, stats;
-		let camera, scene, renderer;
-		let animationSpeed = 1.6; // Speed multiplier (1.0 = original speed, 1.6 = 60% faster)
+    const mesh = new THREE.Mesh(geometry, material);
+    scene.add(mesh);
 
-		init();
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setClearColor(0x000000, 0);
+    
+    // Set renderer size to match window (full screen)
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    
+    container.appendChild(renderer.domElement);
 
-		function init() {
-			container = document.getElementById('container');
+    window.addEventListener('resize', onWindowResize);
+    
+    // Setup control panel functionality
+    const countSlider = document.getElementById('count-slider');
+    const countLabel = document.getElementById('count-label');
+    const speedSlider = document.getElementById('speed-slider');
+    const speedLabel = document.getElementById('speed-label');
+    
+    if (countSlider && countLabel) {
+        countSlider.addEventListener('input', function() {
+            const count = parseInt(this.value);
+            geometry.instanceCount = count;
+            countLabel.textContent = 'Particles: ' + count;
+        });
+    }
+    
+    if (speedSlider && speedLabel) {
+        // Ensure UI slider matches the initial animation speed value
+        speedSlider.value = animationSpeed.toString();
+        speedLabel.textContent = 'Speed: ' + animationSpeed.toFixed(1) + 'x';
+        
+        speedSlider.addEventListener('input', function() {
+            // Update the animation speed without resetting the animation phase
+            animationSpeed = parseFloat(this.value);
+            speedLabel.textContent = 'Speed: ' + animationSpeed.toFixed(1) + 'x';
+            
+            // If still in presentation phase or just at the beginning, we need to recalculate timing
+            if (animationPhase === 'initial') {
+                // Reset start time to adjust for new speed while maintaining current animation position
+                const currentTime = performance.now();
+                const elapsedSoFar = currentTime - startTime;
+                // Adjust start time based on new speed ratio
+                startTime = currentTime - (elapsedSoFar * (1.2 / animationSpeed));
+            }
+        });
+    }
+    
+    // Setup stats panel
+    const statsPanel = document.getElementById('stats-panel');
+    let frameCount = 0;
+    let lastTime = performance.now();
+    let fps = 0;
+    
+    function updateStats() {
+        frameCount++;
+        const now = performance.now();
+        const delta = now - lastTime;
+        
+        if (delta >= 1000) {
+            fps = Math.round((frameCount * 1000) / delta);
+            frameCount = 0;
+            lastTime = now;
+            if (statsPanel) {
+                statsPanel.textContent = fps + ' FPS';
+            }
+        }
+        
+        requestAnimationFrame(updateStats);
+    }
+    
+    updateStats();
+    
+    // Start animation
+    animate();
 
-			camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 10);
-			camera.position.z = 2;
+    // Simple fade in for hero content with delay
+    // Calculate a fade-in time that respects the animation speed
+    const fadeInTime = baseTransitionTimeMS / animationSpeed + 1500; // Add 1.5s after transition
+    setTimeout(() => {
+        const heroContent = document.getElementById('hero-content');
+        if (heroContent) {
+            heroContent.style.opacity = '1';
+        }
+    }, fadeInTime);
+}
 
-			scene = new THREE.Scene();
+function onWindowResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+}
 
-			// geometry
-			const vector = new THREE.Vector4();
-			const instances = 50000;
+function animate() {
+    requestAnimationFrame(animate);
+    
+    const currentTime = performance.now();
+    const elapsedTime = currentTime - startTime;
+    const object = scene.children[0];
+    
+    // Calculate speed-adjusted transition time
+    const adjustedTransitionTime = baseTransitionTimeMS / animationSpeed;
+    
+    // Calculate phase value for smooth transition, now adjusted by speed
+    const transitionDuration = 3000 / animationSpeed; // 3 seconds transition also affected by speed
+    const transitionProgress = Math.max(0, Math.min(1.0, (elapsedTime - adjustedTransitionTime) / transitionDuration));
+    
+    // Update animation phase tracking
+    if (transitionProgress > 0 && animationPhase === 'initial') {
+        animationPhase = 'stable';
+    }
+    
+    object.material.uniforms['phase'].value = transitionProgress;
+    
+    // Base animation speed is controlled by the slider
+    let currentSpeed = animationSpeed;
+    
+    // In stable phase, we adjust the speed but preserve the user's slider setting
+    if (transitionProgress > 0) {
+        // Apply a modifier to the user-selected speed during the stable phase
+        // Scale is 1.0 → 0.6 of the user-selected speed
+        const stableSpeedModifier = 1.0 - (transitionProgress * 0.4);
+        currentSpeed = animationSpeed * stableSpeedModifier;
+    }
 
-			const positions = [];
-			const offsets = [];
-			const colors = [];
-			const orientationsStart = [];
-			const orientationsEnd = [];
+    // Continue rotation and time-based animation
+    object.rotation.y = currentTime * (0.0002 * currentSpeed); 
+    
+    // Calculate time and sine values
+    const timeValue = currentTime * (0.005 * currentSpeed);
+    object.material.uniforms['time'].value = timeValue;
+    
+    // Calculate new sine time
+    const newSineTime = Math.sin(timeValue * (0.05 * currentSpeed));
+    
+    // Special handling for transition start to avoid cuts in animation
+    if (elapsedTime >= adjustedTransitionTime && elapsedTime < adjustedTransitionTime + 100 && transitionProgress < 0.1) {
+        // If we're just starting transition, make sure we're at a good point in the cycle
+        // Wait until we're at a reasonable middle value to start transition
+        if (Math.abs(newSineTime) < 0.3) {
+            // Delay transition slightly until we reach a better point in the cycle
+            object.material.uniforms['phase'].value = 0;
+        }
+    }
+    
+    object.material.uniforms['sineTime'].value = newSineTime;
+    lastSineTime = newSineTime;
 
-			positions.push(0.025, -0.025, 0);
-			positions.push(-0.025, 0.025, 0);
-			positions.push(0, 0, 0.025);
+    renderer.render(scene, camera);
+}
 
-			// instanced attributes
-			for (let i = 0; i < instances; i++) {
-				// offsets
-				offsets.push(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5);
-
-				// colors
-				colors.push(Math.random(), Math.random(), Math.random(), Math.random());
-
-				// orientation start
-				vector.set(Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1);
-				vector.normalize();
-				orientationsStart.push(vector.x, vector.y, vector.z, vector.w);
-
-				// orientation end
-				vector.set(Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1);
-				vector.normalize();
-				orientationsEnd.push(vector.x, vector.y, vector.z, vector.w);
-			}
-
-			const geometry = new THREE.InstancedBufferGeometry();
-			geometry.instanceCount = instances; // set so its initialized for dat.GUI, will be set in first draw otherwise
-
-			geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-			geometry.setAttribute('offset', new THREE.InstancedBufferAttribute(new Float32Array(offsets), 3));
-			geometry.setAttribute('color', new THREE.InstancedBufferAttribute(new Float32Array(colors), 4));
-			geometry.setAttribute('orientationStart', new THREE.InstancedBufferAttribute(new Float32Array(orientationsStart), 4));
-			geometry.setAttribute('orientationEnd', new THREE.InstancedBufferAttribute(new Float32Array(orientationsEnd), 4));
-
-			// material
-			const material = new THREE.RawShaderMaterial({
-				uniforms: {
-					'time': { value: 1.0 },
-					'sineTime': { value: 1.0 }
-				},
-				vertexShader: document.getElementById('vertexShader').textContent,
-				fragmentShader: document.getElementById('fragmentShader').textContent,
-				side: THREE.DoubleSide,
-				transparent: true
-			});
-
-			const mesh = new THREE.Mesh(geometry, material);
-			scene.add(mesh);
-
-			renderer = new THREE.WebGLRenderer();
-			renderer.setPixelRatio(window.devicePixelRatio);
-			renderer.setSize(window.innerWidth, window.innerHeight);
-			container.appendChild(renderer.domElement);
-
-			// Create a control panel for instance count and animation speed
-			const controlPanel = document.createElement('div');
-			controlPanel.style.position = 'absolute';
-			controlPanel.style.bottom = '10px';
-			controlPanel.style.left = '10px';
-			controlPanel.style.zIndex = '100';
-			controlPanel.style.backgroundColor = 'rgba(0,0,0,0.5)';
-			controlPanel.style.padding = '10px';
-			controlPanel.style.borderRadius = '5px';
-			controlPanel.style.pointerEvents = 'auto';
-			
-			// Instance count slider
-			const countSlider = document.createElement('input');
-			countSlider.type = 'range';
-			countSlider.min = '0';
-			countSlider.max = instances.toString();
-			countSlider.value = instances.toString();
-			countSlider.style.width = '200px';
-			countSlider.addEventListener('input', function() {
-				geometry.instanceCount = parseInt(this.value);
-				countLabel.textContent = 'Instances: ' + this.value;
-			});
-			
-			const countLabel = document.createElement('div');
-			countLabel.textContent = 'Instances: ' + instances;
-			countLabel.style.marginBottom = '5px';
-			
-			// Animation speed slider
-			const speedSlider = document.createElement('input');
-			speedSlider.type = 'range';
-			speedSlider.min = '0.2';
-			speedSlider.max = '3.0';
-			speedSlider.step = '0.1';
-			speedSlider.value = animationSpeed.toString();
-			speedSlider.style.width = '200px';
-			speedSlider.addEventListener('input', function() {
-				animationSpeed = parseFloat(this.value);
-				speedLabel.textContent = 'Speed: ' + animationSpeed.toFixed(1) + 'x';
-			});
-			
-			const speedLabel = document.createElement('div');
-			speedLabel.textContent = 'Speed: ' + animationSpeed.toFixed(1) + 'x';
-			speedLabel.style.marginBottom = '5px';
-			speedLabel.style.marginTop = '10px';
-			
-			// Add all controls to the panel
-			controlPanel.appendChild(countLabel);
-			controlPanel.appendChild(countSlider);
-			controlPanel.appendChild(speedLabel);
-			controlPanel.appendChild(speedSlider);
-			container.appendChild(controlPanel);
-
-			// Stats panel - simple custom implementation
-			const statsPanel = document.createElement('div');
-			statsPanel.style.position = 'absolute';
-			statsPanel.style.top = '0px';
-			statsPanel.style.right = '0px';
-			statsPanel.style.zIndex = '100';
-			statsPanel.style.backgroundColor = 'rgba(0,0,0,0.5)';
-			statsPanel.style.padding = '10px';
-			statsPanel.style.color = '#0ff';
-			statsPanel.style.fontFamily = 'monospace';
-			statsPanel.style.fontSize = '12px';
-			statsPanel.style.pointerEvents = 'none';
-			container.appendChild(statsPanel);
-			
-			let frameCount = 0;
-			let lastTime = performance.now();
-			let fps = 0;
-			
-			function updateStats() {
-				frameCount++;
-				const now = performance.now();
-				const delta = now - lastTime;
-				
-				if (delta >= 1000) {
-					fps = Math.round((frameCount * 1000) / delta);
-					frameCount = 0;
-					lastTime = now;
-					statsPanel.textContent = fps + ' FPS';
-				}
-				
-				requestAnimationFrame(updateStats);
-			}
-			
-			updateStats();
-
-			window.addEventListener('resize', onWindowResize);
-			
-			// Start animation
-			animate();
-		}
-
-		function onWindowResize() {
-			camera.aspect = window.innerWidth / window.innerHeight;
-			camera.updateProjectionMatrix();
-			renderer.setSize(window.innerWidth, window.innerHeight);
-		}
-
-		function animate() {
-			requestAnimationFrame(animate);
-			
-			const time = performance.now();
-			const object = scene.children[0];
-
-			// Base speeds multiplied by the animation speed parameter
-			object.rotation.y = time * (0.0005 * animationSpeed); 
-			object.material.uniforms['time'].value = time * (0.005 * animationSpeed);
-			object.material.uniforms['sineTime'].value = Math.sin(object.material.uniforms['time'].value * (0.05 * animationSpeed));
-
-			renderer.render(scene, camera);
-		}
-	</script>
+// Call resize once at start to ensure animation fits container
+window.addEventListener('load', () => {
+    onWindowResize();
+});
+    </script>
 </body>
 </html>

@@ -1,0 +1,295 @@
+/* Modern Font Imports */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* CSS Reset and Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background: #000000;
+    color: #ffffff;
+    line-height: 1.6;
+    overflow-x: hidden;
+}
+
+/* Animation Container */
+#animation-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    z-index: 1;
+}
+
+/* Content Overlay */
+.content-overlay {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    height: 100vh;
+    padding: 2rem;
+    display: grid;
+    grid-template-rows: auto 1fr;
+}
+
+/* Navigation */
+nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 2rem;
+}
+
+.logo {
+    font-size: 1.5rem;
+    font-weight: 700;
+    background: linear-gradient(90deg, #3a8fff, #3af0ff);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.nav-links {
+    display: flex;
+    gap: 1.5rem;
+}
+
+.nav-links a {
+    color: #a4b1cd;
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+
+.nav-links a:hover {
+    color: #ffffff;
+}
+
+/* Hero Text */
+.hero-text {
+    width: 50%;
+    max-width: 600px;
+    padding: 0 2rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+h1 {
+    font-size: 2.75rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    line-height: 1.2;
+    background: linear-gradient(90deg, #ffffff, #a4b1cd);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 30px rgba(255, 255, 255, 0.1);
+}
+
+.subtitle {
+    font-size: 1.1rem;
+    color: #a4b1cd;
+    margin-bottom: 2.5rem;
+    font-weight: 400;
+}
+
+/* Benefits Section */
+.benefits {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    margin-bottom: 2.5rem;
+}
+
+.benefit {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.benefit-icon {
+    width: 3rem;
+    height: 3rem;
+    background: rgba(58, 143, 255, 0.15);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    backdrop-filter: blur(5px);
+}
+
+.benefit-text h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    color: #ffffff;
+}
+
+.benefit-text p {
+    font-size: 0.875rem;
+    color: #a4b1cd;
+}
+
+/* CTA Buttons */
+.cta-buttons {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.primary-button, .secondary-button {
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.25rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+}
+
+.primary-button {
+    background: linear-gradient(90deg, #3a8fff, #3af0ff);
+    color: #0a0e17;
+    border: none;
+}
+
+.primary-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(58, 143, 255, 0.3);
+}
+
+.secondary-button {
+    background: rgba(255, 255, 255, 0.05);
+    color: #ffffff;
+    border: 1px solid rgba(164, 177, 205, 0.3);
+    backdrop-filter: blur(5px);
+}
+
+.secondary-button:hover {
+    background: rgba(164, 177, 205, 0.1);
+}
+
+
+/* Responsive Design */
+@media (max-width: 900px) {
+    .hero-text {
+        width: 100%;
+        max-width: 100%;
+        padding: 0;
+    }
+    
+    h1 {
+        font-size: 2.25rem;
+    }
+    
+    nav {
+        padding: 1rem 0;
+    }
+}
+
+@media (max-width: 600px) {
+    .content-overlay {
+        padding: 1rem;
+    }
+    
+    h1 {
+        font-size: 1.75rem;
+    }
+    
+    .subtitle {
+        font-size: 1rem;
+    }
+    
+    .nav-links {
+        gap: 1rem;
+    }
+    
+    .nav-links a {
+        font-size: 0.8rem;
+    }
+    
+    .cta-buttons {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+}
+/* Compatible Ecosystems */
+.compatible-with {
+    margin-top: 2rem;
+}
+
+.compatible-with p {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #a4b1cd;
+    margin-bottom: 0.75rem;
+}
+
+.ecosystem-logos {
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+}
+
+.ecosystem-logos span {
+    color: #ffffff;
+    font-weight: 500;
+    opacity: 0.7;
+    transition: opacity 0.3s ease;
+}
+
+.ecosystem-logos span:hover {
+    opacity: 1;
+}
+
+/* Responsive Design */
+@media (max-width: 900px) {
+    .hero-text {
+        width: 100%;
+        max-width: 100%;
+        padding: 0;
+    }
+    
+    h1 {
+        font-size: 2.25rem;
+    }
+    
+    nav {
+        padding: 1rem 0;
+    }
+}
+
+@media (max-width: 600px) {
+    .content-overlay {
+        padding: 1rem;
+    }
+    
+    h1 {
+        font-size: 1.75rem;
+    }
+    
+    .subtitle {
+        font-size: 1rem;
+    }
+    
+    .nav-links {
+        gap: 1rem;
+    }
+    
+    .nav-links a {
+        font-size: 0.8rem;
+    }
+    
+    .cta-buttons {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+}
